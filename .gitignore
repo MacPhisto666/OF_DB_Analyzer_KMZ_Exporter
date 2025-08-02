@@ -26,3 +26,18 @@ Thumbs.db
 *.log
 *.bak
 *.tmp
+
+# PyInstaller build directories
+build/
+dist/
+*_Portable/
+
+# File temporanei di test
+test_*.py
+test_*.txt
+*_test.py
+
+# File markdown temporanei
+CORREZIONE_*.md
+CORREZIONI_*.md
+MODIFICHE_*.md

@@ -1,9 +1,0 @@
-[OK] Modulo KMZ disponibile
-[OK] ttkbootstrap disponibile
-[OK] PIL/Pillow disponibile per loghi
-[TEST] Test print() - questo dovrebbe apparire sia nel terminale che nella GUI
-[DEBUG] Base path for logos: C:\GIT\PRG-AI\OF_DB_Analyzer_KMZ_Exporter\AnalizzatoreDB_OpenFiber_Portable
-[OK] Caricamento logo azienda: C:\GIT\PRG-AI\OF_DB_Analyzer_KMZ_Exporter\AnalizzatoreDB_OpenFiber_Portable\data\logo_azienda.png
-[OK] Caricamento logo OpenFiber: C:\GIT\PRG-AI\OF_DB_Analyzer_KMZ_Exporter\AnalizzatoreDB_OpenFiber_Portable\data\logo_openfiber.png
-[ERROR] Errore nel caricamento loghi: 'charmap' codec can't encode character '\u2192' in position 46: character maps to <undefined>
-[EXIT] Chiusura GUI...

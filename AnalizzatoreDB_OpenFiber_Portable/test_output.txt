@@ -1,6 +1,0 @@
-[OK] Modulo KMZ disponibile
-[OK] ttkbootstrap disponibile
-[OK] PIL/Pillow disponibile per loghi
-[TEST] Test print() - questo dovrebbe apparire sia nel terminale che nella GUI
-[WARNING] Logo azienda non trovato: C:\Users\danie\AppData\Local\Temp\data\logo_azienda.png
-[WARNING] Logo OpenFiber non trovato: C:\Users\danie\AppData\Local\Temp\data\logo_openfiber.png
