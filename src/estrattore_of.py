@@ -8,7 +8,7 @@ import os
 import time
 from datetime import datetime
 
-# Import configurazioni
+# Import configurazioni 2
 from config import COMUNI_VALLE_AOSTA, PCN_VALLE_AOSTA
 
 # Import export KMZ (opzionale)
