@@ -22,7 +22,7 @@ try:
     PIL_AVAILABLE = True
 except ImportError:
     PIL_AVAILABLE = False
-    print("⚠️ PIL/Pillow non disponibile - loghi disabilitati")
+    print("[WARNING] PIL/Pillow non disponibile - loghi disabilitati")
 
 # Import del nostro estrattore
 from estrattore_of import estrai_regione_02
@@ -32,13 +32,13 @@ from config import COMUNI_VALLE_AOSTA, PCN_VALLE_AOSTA, STATI_UI, FILTRI_TIPOLOG
 try:
     from kmz_exporter import genera_kmz_pac_pal
     KMZ_AVAILABLE = True
-    print("✅ Modulo KMZ disponibile")
+    print("[OK] Modulo KMZ disponibile")
 except ImportError as e:
     KMZ_AVAILABLE = False
-    print(f"⚠️ Modulo KMZ non disponibile: {e}")
+    print(f"[WARNING] Modulo KMZ non disponibile: {e}")
     
     def genera_kmz_pac_pal(df_data, output_file):
-        print("❌ Export KMZ non disponibile - modulo mancante")
+        print("[ERROR] Export KMZ non disponibile - modulo mancante")
         return False
 
 class StdoutRedirector:
@@ -114,8 +114,8 @@ class ModernOpenFiberGUI:
         sys.stdout = StdoutRedirector(self.log_queue, self.original_stdout)
         
         # Log di test per verificare funzionamento
-        self.log_message("🔧 Sistema di logging GUI inizializzato", "success")
-        print("📝 Test print() - questo dovrebbe apparire sia nel terminale che nella GUI")
+        self.log_message("[TOOL] Sistema di logging GUI inizializzato", "success")
+        print("[TEST] Test print() - questo dovrebbe apparire sia nel terminale che nella GUI")
         
         # Carica loghi
         self.load_logos()
@@ -141,6 +141,7 @@ class ModernOpenFiberGUI:
             return
             
         try:
+            
             current_dir = os.path.dirname(os.path.abspath(__file__))
             
             # Logo azienda
@@ -148,19 +149,19 @@ class ModernOpenFiberGUI:
             logo_azienda_path = os.path.normpath(logo_azienda_path)
             
             if os.path.exists(logo_azienda_path):
-                print(f"✅ Caricamento logo azienda: {logo_azienda_path}")
+                print(f"[OK] Caricamento logo azienda: {logo_azienda_path}")
                 img = Image.open(logo_azienda_path)
                 img = img.resize((50, 50), Image.Resampling.LANCZOS)
                 self.logo_azienda = ImageTk.PhotoImage(img)
             else:
-                print(f"⚠️ Logo azienda non trovato: {logo_azienda_path}")
+                print(f"[WARNING] Logo azienda non trovato: {logo_azienda_path}")
             
             # Logo OpenFiber
             logo_of_path = os.path.join(current_dir, "..", "data", "logo_openfiber.png")
             logo_of_path = os.path.normpath(logo_of_path)
             
             if os.path.exists(logo_of_path):
-                print(f"✅ Caricamento logo OpenFiber: {logo_of_path}")
+                print(f"[OK] Caricamento logo OpenFiber: {logo_of_path}")
                 img = Image.open(logo_of_path)
                 
                 # Mantieni proporzioni originali (567x111 → ~178x35)
@@ -174,10 +175,10 @@ class ModernOpenFiberGUI:
                 img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
                 self.logo_openfiber = ImageTk.PhotoImage(img)
             else:
-                print(f"⚠️ Logo OpenFiber non trovato: {logo_of_path}")
+                print(f"[WARNING] Logo OpenFiber non trovato: {logo_of_path}")
                 
         except Exception as e:
-            print(f"❌ Errore nel caricamento loghi: {e}")
+            print(f"[ERROR] Errore nel caricamento loghi: {e}")
     
     def setup_variables(self):
         """Inizializza le variabili tkinter"""
@@ -212,7 +213,7 @@ class ModernOpenFiberGUI:
         # Left panel
         left_panel = ttk_modern.LabelFrame(
             main_container, 
-            text="⚙️ Configurazione", 
+            text="[CONFIG] Configurazione", 
             padding=15,
             bootstyle="info" # type: ignore
         )
@@ -427,7 +428,7 @@ class ModernOpenFiberGUI:
         # Filtri principali dal config
         main_filters = [
             ('ftth_vendibili', '🏠 FTTH Vendibili [102]', 'info'),
-            ('pac_pal', '🏛️ PAC/PAL [302]', 'warning'),
+            ('pac_pal', ' PAC/PAL [302]', 'warning'),
             ('fwa_vendibili', '📡 FWA Vendibili [202]', 'info'),
             ('vendibili_tutti', '💰 Tutti Vendibili [102,202,302]', 'primary'),
             ('prevendibili', '⏳ Prevendibilità [80]', 'secondary'),
@@ -471,12 +472,12 @@ class ModernOpenFiberGUI:
             ('ftth_tutti', '🌐 FTTH Tutte [101,102]'),
             ('fwa_vendibili', '📡 FWA Vendibili [202]'),
             ('fwa_tutti', '📶 FWA Tutte [201,202,205]'),
-            ('pac_pal', '🏛️ PAC/PAL [302]'),
+            ('pac_pal', ' PAC/PAL [302]'),
             ('prevendibili', '⏳ Prevendibilità [80]'),
             ('easy_delivery', '🚚 Easy Delivery [602]'),
             ('uso_futuro', '🔮 Uso Futuro [603,604,902,905]'),
             ('vendibili_tutti', '💰 Vendibili Tutti [102,202,302]'),
-            ('tutti_stati', '🌍 Tutti gli Stati')
+            ('tutti_stati', '[KMZ] Tutti gli Stati')
         ]
         
         for filter_key, text in all_filters:
@@ -528,7 +529,7 @@ class ModernOpenFiberGUI:
         
         ttk_modern.Button(
             custom_frame,
-            text="ℹ️ Codici",
+            text="[INFO] Codici",
             command=self.show_state_codes,
             bootstyle="outline-secondary",
             width=8
@@ -592,7 +593,7 @@ class ModernOpenFiberGUI:
                     self.filter_custom_state.set(','.join(sorted(all_codes)))
                 
                 # Log il cambiamento
-                self.log_message(f"✅ Filtro attivato: {filter_info.get('descrizione', filter_key)} - Codici: {new_codes}")
+                self.log_message(f"[OK] Filtro attivato: {filter_info.get('descrizione', filter_key)} - Codici: {new_codes}")
             elif not is_selected and codici:
                 # Rimuovi i codici del filtro disattivato dal campo personalizzato
                 current_custom = self.filter_custom_state.get().strip()
@@ -602,7 +603,7 @@ class ModernOpenFiberGUI:
                     self.filter_custom_state.set(','.join(remaining_codes))
                 
                 # Log la disattivazione
-                self.log_message(f"❌ Filtro disattivato: {filter_info.get('descrizione', filter_key)}")
+                self.log_message(f"[ERROR] Filtro disattivato: {filter_info.get('descrizione', filter_key)}")
     
     def create_export_options_section(self, parent):
         """Sezione opzioni export avanzate"""
@@ -612,7 +613,7 @@ class ModernOpenFiberGUI:
         # Checkbox per export KMZ
         kmz_checkbox = ttk_modern.Checkbutton(
             export_frame,
-            text="🌍 Genera KMZ per Google Earth (solo sedi PAC/PAL)",
+            text="[KMZ] Genera KMZ per Google Earth (solo sedi PAC/PAL)",
             variable=self.export_kmz,
             bootstyle="warning"  # Stile semplificato
         )
@@ -634,7 +635,7 @@ class ModernOpenFiberGUI:
         # Info formato
         format_info = ttk_modern.Label(
             export_frame,
-            text="📊 Excel: Sempre generato con data YYYYMMDD automatica\n🌍 KMZ: Opzionale per Google Earth",
+            text="[DATA] Excel: Sempre generato con data YYYYMMDD automatica\n[KMZ] KMZ: Opzionale per Google Earth",
             font=("Arial", 8),
             bootstyle="info",
             justify=LEFT
@@ -643,7 +644,7 @@ class ModernOpenFiberGUI:
     
     def create_advanced_settings(self, parent):
         """Impostazioni avanzate"""
-        advanced_frame = ttk_modern.LabelFrame(parent, text="⚙️ Impostazioni Avanzate", padding=10)
+        advanced_frame = ttk_modern.LabelFrame(parent, text="[CONFIG] Impostazioni Avanzate", padding=10)
         advanced_frame.pack(fill=X, pady=(0, 15))
         
         ttk_modern.Label(advanced_frame, text="Dimensione chunk (righe):").pack(anchor=W)
@@ -692,7 +693,7 @@ class ModernOpenFiberGUI:
         
         ttk_modern.Button(
             button_row,
-            text="📊 Anteprima",
+            text="[DATA] Anteprima",
             command=self.preview_data,
             bootstyle="outline-info",
             width=12
@@ -700,7 +701,7 @@ class ModernOpenFiberGUI:
         
         ttk_modern.Button(
             button_row,
-            text="🗑️ Reset",
+            text="[CLEAN] Reset",
             command=self.reset_form,
             bootstyle="outline-warning",
             width=12
@@ -764,7 +765,7 @@ class ModernOpenFiberGUI:
         
         clear_button = ttk_modern.Button(
             log_frame,
-            text="🗑️ Pulisci Log",
+            text="[CLEAN] Pulisci Log",
             command=self.clear_log,
             bootstyle="outline-secondary",
             width=15
@@ -773,7 +774,7 @@ class ModernOpenFiberGUI:
     
     def create_stats_section(self, parent):
         """Sezione statistiche risultati"""
-        stats_frame = ttk_modern.LabelFrame(parent, text="📊 Statistiche", padding=15)
+        stats_frame = ttk_modern.LabelFrame(parent, text="[DATA] Statistiche", padding=15)
         stats_frame.pack(fill=X)
         
         stats_grid = ttk_modern.Frame(stats_frame)
@@ -790,9 +791,9 @@ class ModernOpenFiberGUI:
         
         stats_labels = [
             ("📋 Record estratti:", 'record_estratti'),
-            ("🏘️ Comuni trovati:", 'comuni_trovati'),
+            (" Comuni trovati:", 'comuni_trovati'),
             ("📡 PCN utilizzati:", 'pcn_utilizzati'),
-            ("⏱️ Tempo elaborazione:", 'tempo_elaborazione'),
+            ("[TIME] Tempo elaborazione:", 'tempo_elaborazione'),
             ("📦 Dimensione output:", 'dimensione_output'),
             ("⚡ Velocità:", 'velocita_processing')
         ]
@@ -821,22 +822,22 @@ class ModernOpenFiberGUI:
         self.app.deiconify()
         
         self.log_message("🎉 Interfaccia inizializzata correttamente", "success")
-        self.log_message("ℹ️ Seleziona il file CSV di input per iniziare", "info")
+        self.log_message("[INFO] Seleziona il file CSV di input per iniziare", "info")
         self.log_message("📁 Nome file Excel generato automaticamente con data YYYYMMDD", "info")
         self.log_message("💡 I filtri PAC/PAL [302] e Residenziali [102] sono disponibili (v2.2 per funzionalità)", "info")
         
         # Log status loghi e KMZ
         if self.logo_azienda and self.logo_openfiber:
-            self.log_message("🖼️ Loghi aziendali caricati con successo", "success")
+            self.log_message("[IMG] Loghi aziendali caricati con successo", "success")
         elif self.logo_azienda or self.logo_openfiber:
-            self.log_message("🖼️ Alcuni loghi caricati (verifica path data/)", "warning")
+            self.log_message("[IMG] Alcuni loghi caricati (verifica path data/)", "warning")
         else:
-            self.log_message("⚠️ Nessun logo caricato - verifica data/logo_*.png", "warning")
+            self.log_message("[WARNING] Nessun logo caricato - verifica data/logo_*.png", "warning")
         
         if KMZ_AVAILABLE:
-            self.log_message("🌍 Export KMZ disponibile per Google Earth", "success")
+            self.log_message("[KMZ] Export KMZ disponibile per Google Earth", "success")
         else:
-            self.log_message("⚠️ Export KMZ non disponibile - installa dipendenze", "warning")
+            self.log_message("[WARNING] Export KMZ non disponibile - installa dipendenze", "warning")
     
     def on_closing(self):
         """Gestione chiusura applicazione"""
@@ -846,7 +847,7 @@ class ModernOpenFiberGUI:
             sys.stderr = self.original_stderr
         
         # Log finale
-        print("👋 Chiusura GUI...")
+        print("[EXIT] Chiusura GUI...")
         self.app.destroy()
     
     # === EVENT HANDLERS ===
@@ -966,7 +967,7 @@ class ModernOpenFiberGUI:
             
             ttk_modern.Label(
                 frame,
-                text=f"📊 Anteprima: prime 10 righe di {os.path.basename(self.input_file_var.get())}",
+                text=f"[DATA] Anteprima: prime 10 righe di {os.path.basename(self.input_file_var.get())}",
                 font=("Arial", 14, "bold")
             ).pack(pady=(0, 15))
             
@@ -997,19 +998,19 @@ class ModernOpenFiberGUI:
                 bootstyle="secondary"
             ).pack(pady=(10, 0))
             
-            self.log_message("✅ Anteprima caricata con successo", "success")
+            self.log_message("[OK] Anteprima caricata con successo", "success")
             
         except Exception as e:
-            self.log_message(f"❌ Errore nell'anteprima: {str(e)}", "error")
+            self.log_message(f"[ERROR] Errore nell'anteprima: {str(e)}", "error")
             messagebox.showerror("Errore", f"Impossibile caricare anteprima:\n{str(e)}")
     
     def clear_log(self):
         """Pulisce il log"""
         if hasattr(self, 'log_text'):
             self.log_text.delete(1.0, tk.END)
-            self.log_message("🗑️ Log pulito", "info")
+            self.log_message("[CLEAN] Log pulito", "info")
         else:
-            print("⚠️ Widget log_text non trovato")
+            print("[WARNING] Widget log_text non trovato")
     
     def reset_form(self):
         """Reset form ai valori di default"""
@@ -1045,7 +1046,7 @@ class ModernOpenFiberGUI:
         os.makedirs(self.output_dir_var.get(), exist_ok=True)
         
         self.processing = True
-        self.start_button.configure(text="⏸️ Elaborazione in corso...", state=DISABLED)
+        self.start_button.configure(text="[PAUSE] Elaborazione in corso...", state=DISABLED)
         
         processing_thread = threading.Thread(target=self.process_data_thread)
         processing_thread.daemon = True
@@ -1067,7 +1068,7 @@ class ModernOpenFiberGUI:
             self.log_message("🚀 Avvio elaborazione OpenFiber...", "info")
             self.log_message(f"📁 Input: {os.path.basename(input_file)}", "info")
             self.log_message(f"📂 Output dir: {self.output_dir_var.get()}", "info")
-            self.log_message(f"⚙️ Chunk size: {chunk_size:,} righe", "info")
+            self.log_message(f"[CONFIG] Chunk size: {chunk_size:,} righe", "info")
             
             # Calcola filtri STATO_UI attivi - ORA FUNZIONALI!
             filter_codes = self.get_active_filter_codes()
@@ -1075,7 +1076,7 @@ class ModernOpenFiberGUI:
             
             # Filtri da checkbox legacy
             if self.filter_pac_pal.get():
-                active_filter_names.append("🏛️ PAC/PAL [302]")
+                active_filter_names.append(" PAC/PAL [302]")
                 if '302' not in filter_codes:
                     filter_codes.append('302')
             if self.filter_residenziali.get():
@@ -1097,8 +1098,8 @@ class ModernOpenFiberGUI:
             if filter_codes:
                 self.log_message(f"🔍 Filtri STATO_UI attivi: {filter_codes}", "success")
                 if active_filter_names:
-                    self.log_message(f"🏷️ Filtri GUI: {', '.join(active_filter_names)}", "info")
-                self.log_message("✅ Filtri verranno applicati durante l'estrazione", "success")
+                    self.log_message(f"[TAG] Filtri GUI: {', '.join(active_filter_names)}", "info")
+                self.log_message("[OK] Filtri verranno applicati durante l'estrazione", "success")
             else:
                 self.log_message("📋 Nessun filtro attivo - tutti i record saranno estratti", "info")
             
@@ -1106,31 +1107,31 @@ class ModernOpenFiberGUI:
             export_options = []
             if self.export_kmz.get():
                 if KMZ_AVAILABLE:
-                    export_options.append("🌍 KMZ Google Earth")
+                    export_options.append("[KMZ] KMZ Google Earth")
                 else:
-                    self.log_message("⚠️ Export KMZ richiesto ma modulo non disponibile", "warning")
+                    self.log_message("[WARNING] Export KMZ richiesto ma modulo non disponibile", "warning")
             
             if export_options:
                 self.log_message(f"📤 Export aggiuntivi: {', '.join(export_options)}", "info")
             else:
-                self.log_message("📊 Solo Excel sarà generato con data automatica", "info")
+                self.log_message("[DATA] Solo Excel sarà generato con data automatica", "info")
             
             # Progress tracking migliorato
             self.update_progress(5, "Inizializzazione sistema...")
             time.sleep(0.3)
             
             self.update_progress(10, "Apertura file CSV...")
-            self.log_message("📊 Inizio lettura file CSV...", "info")
+            self.log_message("[DATA] Inizio lettura file CSV...", "info")
             time.sleep(0.3)
             
             phases = [
                 (15, "Lettura header CSV...", "📋 Analisi struttura file"),
                 (20, "Ricerca inizio Valle d'Aosta...", "🔍 Scansione regioni..."),
-                (30, "Estrazione dati Valle d'Aosta...", "⛏️ Estrazione record regione 02"),
-                (50, "Arricchimento dati geografici...", "🗺️ Mapping comuni e PCN"),
-                (70, "Generazione fogli Excel...", "📊 Creazione Excel multi-foglio"),
+                (30, "Estrazione dati Valle d'Aosta...", "[EXTRACT] Estrazione record regione 02"),
+                (50, "Arricchimento dati geografici...", "[MAP] Mapping comuni e PCN"),
+                (70, "Generazione fogli Excel...", "[DATA] Creazione Excel multi-foglio"),
                 (85, "Applicazione formattazione...", "🎨 Formattazione professionale"),
-                (95, "Finalizzazione file...", "💾 Salvataggio finale")
+                (95, "Finalizzazione file...", "[SAVE] Salvataggio finale")
             ]
             
             for progress, status, log_msg in phases:
@@ -1139,7 +1140,7 @@ class ModernOpenFiberGUI:
                 time.sleep(0.5)
             
             # Chiamata all'estrattore reale con stdout redirect ATTIVO
-            self.log_message("🔧 Avvio elaborazione core engine...", "warning")
+            self.log_message("[TOOL] Avvio elaborazione core engine...", "warning")
             
             # AGGIORNATO: Passa i parametri export_kmz e filtri
             # Il redirect è ATTIVO - tutti i print() andranno nella GUI E nel terminale
@@ -1170,8 +1171,8 @@ class ModernOpenFiberGUI:
                 
                 self.update_final_stats(46323, 64, 42, elapsed_time, output_size)
                 
-                # 🔧 FIX: Un solo messaggio di successo per evitare duplicazione
-                self.log_message("✅ Elaborazione completata con successo!", "success")
+                # [TOOL] FIX: Un solo messaggio di successo per evitare duplicazione
+                self.log_message("[OK] Elaborazione completata con successo!", "success")
                 self.log_message(f"📁 File Excel: {os.path.basename(excel_file_to_show)}", "success")
                 
                 if self.export_kmz.get():
@@ -1179,9 +1180,9 @@ class ModernOpenFiberGUI:
                     base_name = os.path.splitext(excel_file_to_show)[0]
                     kmz_file = f"{base_name}_PAC_PAL.kmz"
                     if os.path.exists(kmz_file):
-                        self.log_message(f"🌍 File KMZ: {os.path.basename(kmz_file)}", "success")
+                        self.log_message(f"[KMZ] File KMZ: {os.path.basename(kmz_file)}", "success")
                     else:
-                        self.log_message("⚠️ KMZ non generato - controlla log per errori", "warning")
+                        self.log_message("[WARNING] KMZ non generato - controlla log per errori", "warning")
                 
                 self.update_progress(100, "Elaborazione completata!")
                 
@@ -1195,13 +1196,13 @@ class ModernOpenFiberGUI:
                 self.app.after(0, lambda: messagebox.showinfo("Successo", success_msg))
                 
             else:
-                self.log_message("❌ Elaborazione fallita", "error")
+                self.log_message("[ERROR] Elaborazione fallita", "error")
                 self.update_progress(0, "Elaborazione fallita")
                 # Mostra errore nel main thread
                 self.app.after(0, lambda: messagebox.showerror("Errore", "L'elaborazione è fallita. Controlla il log per dettagli."))
             
         except Exception as e:
-            self.log_message(f"❌ Errore critico durante elaborazione: {str(e)}", "error")
+            self.log_message(f"[ERROR] Errore critico durante elaborazione: {str(e)}", "error")
             self.update_progress(0, "Errore critico")
             # Mostra errore critico nel main thread
             self.app.after(0, lambda: messagebox.showerror("Errore Critico", f"Errore durante elaborazione:\n{str(e)}"))
@@ -1299,26 +1300,26 @@ def main():
     """Funzione principale per avviare la GUI"""
     try:
         import ttkbootstrap
-        print("✅ ttkbootstrap disponibile")
+        print("[OK] ttkbootstrap disponibile")
         
         if PIL_AVAILABLE:
-            print("✅ PIL/Pillow disponibile per loghi")
+            print("[OK] PIL/Pillow disponibile per loghi")
         else:
-            print("⚠️ PIL/Pillow non disponibile - loghi disabilitati")
+            print("[WARNING] PIL/Pillow non disponibile - loghi disabilitati")
             print("Per abilitare i loghi: pip install Pillow")
         
         app = ModernOpenFiberGUI()
         app.run()
         
     except ImportError as e:
-        print("❌ Dipendenza mancante:")
+        print("[ERROR] Dipendenza mancante:")
         print("Per la GUI moderna è necessario installare:")
         print("pip install ttkbootstrap Pillow")
         print("\nIn alternativa, usa la versione console:")
         print("python estrattore_of.py")
         
     except Exception as e:
-        print(f"❌ Errore nell'avvio della GUI: {e}")
+        print(f"[ERROR] Errore nell'avvio della GUI: {e}")
 
 if __name__ == "__main__":
     main()
