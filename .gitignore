@@ -1,6 +1,6 @@
 # Cartelle dati e output
-data/
 output/
+test/
 
 # Python cache
 __pycache__/
