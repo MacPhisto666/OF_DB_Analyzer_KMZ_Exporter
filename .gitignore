@@ -15,7 +15,9 @@ venv/
 env/
 
 # IDE e sistema operativo
-.vscode/
+# Ignora tutto in .vscode tranne settings.json
+.vscode/*
+!.vscode/settings.json
 .idea/
 .DS_Store
 Thumbs.db
