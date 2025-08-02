@@ -2,7 +2,12 @@
     "python.defaultInterpreterPath": ".venv\\Scripts\\python.exe",
     "python.envFile": "${workspaceFolder}/.env",
     "python.terminal.activateEnvironment": true,
-    "terminal.integrated.defaultProfile.windows": "cmd",
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "terminal.integrated.profiles.windows": {
+        "Command Prompt": {
+            "path": "C:\\Windows\\System32\\cmd.exe"
+        }
+    },
     "python-envs.pythonProjects": [
         {
             "path": "",
