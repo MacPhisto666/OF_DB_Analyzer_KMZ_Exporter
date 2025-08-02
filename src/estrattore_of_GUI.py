@@ -132,6 +132,16 @@ class ModernOpenFiberGUI:
         # Gestione chiusura
         self.app.protocol("WM_DELETE_WINDOW", self.on_closing)
     
+    def get_base_path(self):
+        """Ottiene la directory base sia in sviluppo che nell'eseguibile PyInstaller"""
+        if getattr(sys, 'frozen', False):
+            # Eseguibile PyInstaller: usa la directory dell'eseguibile
+            return os.path.dirname(sys.executable)
+        else:
+            # Ambiente di sviluppo: usa la directory del progetto
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            return os.path.normpath(os.path.join(current_dir, ".."))
+    
     def load_logos(self):
         """Carica i loghi aziendali se presenti"""
         self.logo_azienda = None
@@ -141,11 +151,11 @@ class ModernOpenFiberGUI:
             return
             
         try:
-            
-            current_dir = os.path.dirname(os.path.abspath(__file__))
+            base_path = self.get_base_path()
+            print(f"[DEBUG] Base path for logos: {base_path}")
             
             # Logo azienda
-            logo_azienda_path = os.path.join(current_dir, "..", "data", "logo_azienda.png")
+            logo_azienda_path = os.path.join(base_path, "data", "logo_azienda.png")
             logo_azienda_path = os.path.normpath(logo_azienda_path)
             
             if os.path.exists(logo_azienda_path):
@@ -157,7 +167,7 @@ class ModernOpenFiberGUI:
                 print(f"[WARNING] Logo azienda non trovato: {logo_azienda_path}")
             
             # Logo OpenFiber
-            logo_of_path = os.path.join(current_dir, "..", "data", "logo_openfiber.png")
+            logo_of_path = os.path.join(base_path, "data", "logo_openfiber.png")
             logo_of_path = os.path.normpath(logo_of_path)
             
             if os.path.exists(logo_of_path):
@@ -170,7 +180,7 @@ class ModernOpenFiberGUI:
                 target_height = 35
                 target_width = int(target_height * aspect_ratio)
                 
-                print(f"📐 Ridimensionamento OpenFiber: {original_width}x{original_height} → {target_width}x{target_height}")
+                print(f"[RESIZE] Ridimensionamento OpenFiber: {original_width}x{original_height} -> {target_width}x{target_height}")
                 
                 img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
                 self.logo_openfiber = ImageTk.PhotoImage(img)
