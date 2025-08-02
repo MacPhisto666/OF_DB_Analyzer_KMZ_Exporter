@@ -742,19 +742,57 @@ def get_sedi_pac_pal(df):
     """
     return df[df['STATO_UI'] == '302']
 
-# Filtri specifici per tipologie di sede
+# Filtri specifici per tipologie di sede (aggiornato con tutti i filtri)
 FILTRI_TIPOLOGIE_SEDE = {
-    'solo_pac_pal': {
-        'STATO_UI': ['302'],
-        'description': 'Solo sedi Pubblica Amministrazione (PAC/PAL)'
+    'ftth_vendibili': {
+        'codici': ['102'],
+        'descrizione': '🏠 FTTH Vendibili',
+        'tooltip': 'Solo sedi FTTH vendibili'
     },
-    'solo_residenziali': {
-        'STATO_UI': ['102'],
-        'description': 'Solo sedi residenziali'
+    'ftth_tutti': {
+        'codici': ['101', '102'],
+        'descrizione': '🌐 FTTH Tutte',
+        'tooltip': 'Tutte le sedi FTTH (vendibili e non)'
     },
-    'sedi_pubbliche_e_residenziali': {
-        'STATO_UI': ['102', '302'],
-        'description': 'Sedi residenziali + Pubblica Amministrazione'
+    'fwa_vendibili': {
+        'codici': ['202'],
+        'descrizione': '📡 FWA Vendibili',
+        'tooltip': 'Solo sedi FWA vendibili'
+    },
+    'fwa_tutti': {
+        'codici': ['201', '202', '205'],
+        'descrizione': '📶 FWA Tutte',
+        'tooltip': 'Tutte le sedi FWA'
+    },
+    'pac_pal': {
+        'codici': ['302'],
+        'descrizione': '🏛️ PAC/PAL',
+        'tooltip': 'Solo sedi Pubblica Amministrazione'
+    },
+    'prevendibili': {
+        'codici': ['80'],
+        'descrizione': '⏳ Prevendibilità',
+        'tooltip': 'Sedi in prevendibilità'
+    },
+    'easy_delivery': {
+        'codici': ['602'],
+        'descrizione': '🚚 Easy Delivery',
+        'tooltip': 'FTTH Easy Delivery'
+    },
+    'uso_futuro': {
+        'codici': ['603', '604', '902', '905'],
+        'descrizione': '🔮 Uso Futuro',
+        'tooltip': 'Sedi pianificate per uso futuro'
+    },
+    'vendibili_tutti': {
+        'codici': ['102', '202', '302'],
+        'descrizione': '💰 Vendibili (FTTH+FWA+PAC)',
+        'tooltip': 'Tutte le sedi attualmente vendibili'
+    },
+    'tutti_stati': {
+        'codici': list(STATI_UI.keys()),
+        'descrizione': '🌍 Tutti gli Stati',
+        'tooltip': 'Tutti gli stati disponibili'
     }
 }
 

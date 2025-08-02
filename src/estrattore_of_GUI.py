@@ -42,38 +42,49 @@ except ImportError as e:
         return False
 
 class StdoutRedirector:
-    """Redirect stdout verso la GUI log - FIXED v2.1.1"""
-    def __init__(self, log_queue):
+    """Redirect stdout verso la GUI log - VERSIONE MIGLIORATA"""
+    def __init__(self, log_queue, original_stdout):
         self.log_queue = log_queue
-        self._buffer = ""  # Buffer per messaggi parziali
+        self.original_stdout = original_stdout
+        self._buffer = ""
         
     def write(self, text):
+        # Scrivi anche nel terminale per debug
+        if self.original_stdout:
+            self.original_stdout.write(text)
+            self.original_stdout.flush()
+        
         if text:
             # Accumula nel buffer
             self._buffer += text
             
-            # Se il messaggio termina con newline, processa
-            if '\n' in self._buffer:
-                lines = self._buffer.split('\n')
-                # Processa tutte le righe complete
-                for line in lines[:-1]:
-                    if line.strip():  # Solo righe non vuote
-                        self.log_queue.put((
+            # Se c'è un newline, processa le righe complete
+            while '\n' in self._buffer:
+                line, self._buffer = self._buffer.split('\n', 1)
+                if line.strip():  # Solo righe non vuote
+                    try:
+                        self.log_queue.put_nowait((
                             datetime.now().strftime("%H:%M:%S"),
                             line.strip(),
                             "info"
                         ))
-                # Mantieni l'ultima parte nel buffer
-                self._buffer = lines[-1]
+                    except:
+                        pass  # Se la queue è piena, ignora
     
     def flush(self):
+        if self.original_stdout:
+            self.original_stdout.flush()
+        
         # Processa eventuali messaggi rimanenti nel buffer
         if self._buffer.strip():
-            self.log_queue.put((
-                datetime.now().strftime("%H:%M:%S"),
-                self._buffer.strip(),
-                "info"
-            ))
+            try:
+                self.log_queue.put_nowait((
+                    datetime.now().strftime("%H:%M:%S"),
+                    self._buffer.strip(),
+                    "info"
+                ))
+            except:
+                pass
             self._buffer = ""
 
 class ModernOpenFiberGUI:
@@ -89,17 +100,22 @@ class ModernOpenFiberGUI:
         self.app.state('zoomed')  # Windows fullscreen
         # Per Linux/Mac alternativo: self.app.attributes('-zoomed', True)
         
-        # Dimensioni minime (per quando esce da fullscreen)
-        self.app.minsize(1400, 1000)
+        # Dimensioni minime allargate per i nuovi filtri
+        self.app.minsize(1600, 1100)
         
         # Variabili di stato
         self.processing = False
         self.log_queue = queue.Queue()
         self.progress_queue = queue.Queue()
         
-        # Redirect stdout verso GUI log
+        # Redirect stdout verso GUI log - MIGLIORATO v2
         self.original_stdout = sys.stdout
-        sys.stdout = StdoutRedirector(self.log_queue)
+        self.original_stderr = sys.stderr
+        sys.stdout = StdoutRedirector(self.log_queue, self.original_stdout)
+        
+        # Log di test per verificare funzionamento
+        self.log_message("🔧 Sistema di logging GUI inizializzato", "success")
+        print("📝 Test print() - questo dovrebbe apparire sia nel terminale che nella GUI")
         
         # Carica loghi
         self.load_logos()
@@ -166,13 +182,16 @@ class ModernOpenFiberGUI:
     def setup_variables(self):
         """Inizializza le variabili tkinter"""
         self.input_file_var = tk.StringVar()
-        self.output_dir_var = tk.StringVar(value="output")
+        self.output_dir_var = tk.StringVar()  # Campo output vuoto per default
         self.chunk_size_var = tk.IntVar(value=10000)
         
-        # Filtri
+        # Filtri (mantengo i vecchi per compatibilità)
         self.filter_pac_pal = tk.BooleanVar(value=False)
         self.filter_residenziali = tk.BooleanVar(value=False)
         self.filter_custom_state = tk.StringVar(value="")
+        
+        # Nuovi filtri estesi (inizializzati dinamicamente nel metodo dei filtri)
+        # Le variabili vengono create on-demand nei metodi create_*_filters_tab
         
         # Export options
         self.export_kmz = tk.BooleanVar(value=False)
@@ -366,32 +385,140 @@ class ModernOpenFiberGUI:
         info_label.pack(anchor=W, pady=(5, 0))
     
     def create_filters_section(self, parent):
-        """Sezione filtri con etichette migliorate"""
-        filters_frame = ttk_modern.LabelFrame(parent, text="🔍 Filtri Dati", padding=10)
+        """Sezione filtri completa con tutti i tipi STATO_UI"""
+        filters_frame = ttk_modern.LabelFrame(parent, text="🔍 Filtri Dati STATO_UI", padding=10)
         filters_frame.pack(fill=X, pady=(0, 15))
         
-        ttk_modern.Label(filters_frame, text="Tipologie di sede:", font=("Arial", 10, "bold")).pack(anchor=W)
+        # Creiamo un notebook (schede) per organizzare meglio i filtri
+        filter_notebook = ttk_modern.Notebook(filters_frame)
+        filter_notebook.pack(fill=BOTH, expand=True)
         
-        ttk_modern.Checkbutton(
-            filters_frame,
-            text="🏛️ PAC/PAL [302]",
-            variable=self.filter_pac_pal,
-            bootstyle="success-round-toggle"
-        ).pack(anchor=W, pady=2)
+        # Tab 1: Filtri Comuni
+        common_tab = ttk_modern.Frame(filter_notebook)
+        filter_notebook.add(common_tab, text="Comuni")
         
-        ttk_modern.Checkbutton(
-            filters_frame,
-            text="🏠 Residenziale [102]",
-            variable=self.filter_residenziali,
-            bootstyle="info-round-toggle"
-        ).pack(anchor=W, pady=2)
+        # Tab 2: Filtri Avanzati
+        advanced_tab = ttk_modern.Frame(filter_notebook)
+        filter_notebook.add(advanced_tab, text="Tutti i Tipi")
         
-        # Filtro personalizzato
-        ttk_modern.Separator(filters_frame, orient=HORIZONTAL).pack(fill=X, pady=10)
+        # Tab 3: Personalizzato
+        custom_tab = ttk_modern.Frame(filter_notebook)
+        filter_notebook.add(custom_tab, text="Personalizzato")
         
-        ttk_modern.Label(filters_frame, text="Filtro STATO_UI personalizzato:").pack(anchor=W)
-        custom_frame = ttk_modern.Frame(filters_frame)
-        custom_frame.pack(fill=X, pady=(5, 0))
+        self.create_common_filters_tab(common_tab)
+        self.create_advanced_filters_tab(advanced_tab)
+        self.create_custom_filters_tab(custom_tab)
+    
+    def create_common_filters_tab(self, parent):
+        """Tab con i filtri più comuni"""
+        # Frame scrollabile per i filtri
+        canvas = tk.Canvas(parent, highlightthickness=0)
+        scrollbar = ttk_modern.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk_modern.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Filtri principali dal config
+        main_filters = [
+            ('ftth_vendibili', '🏠 FTTH Vendibili [102]', 'info'),
+            ('pac_pal', '🏛️ PAC/PAL [302]', 'warning'),
+            ('fwa_vendibili', '📡 FWA Vendibili [202]', 'info'),
+            ('vendibili_tutti', '💰 Tutti Vendibili [102,202,302]', 'primary'),
+            ('prevendibili', '⏳ Prevendibilità [80]', 'secondary'),
+            ('easy_delivery', '🚚 Easy Delivery [602]', 'danger')
+        ]
+        
+        for filter_key, text, style in main_filters:
+            var_name = f'filter_{filter_key}'
+            if not hasattr(self, var_name):
+                setattr(self, var_name, tk.BooleanVar())
+            
+            ttk_modern.Checkbutton(
+                scrollable_frame,
+                text=text,
+                variable=getattr(self, var_name),
+                bootstyle="info",  # Stile semplificato e sicuro
+                command=lambda k=filter_key: self.on_filter_change(k)
+            ).pack(anchor=W, pady=3, padx=5)
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+    
+    def create_advanced_filters_tab(self, parent):
+        """Tab con tutti i filtri disponibili"""
+        # Frame scrollabile
+        canvas = tk.Canvas(parent, highlightthickness=0)
+        scrollbar = ttk_modern.Scrollbar(parent, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk_modern.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Tutti i filtri dal config
+        all_filters = [
+            ('ftth_vendibili', '🏠 FTTH Vendibili [102]'),
+            ('ftth_tutti', '🌐 FTTH Tutte [101,102]'),
+            ('fwa_vendibili', '📡 FWA Vendibili [202]'),
+            ('fwa_tutti', '📶 FWA Tutte [201,202,205]'),
+            ('pac_pal', '🏛️ PAC/PAL [302]'),
+            ('prevendibili', '⏳ Prevendibilità [80]'),
+            ('easy_delivery', '🚚 Easy Delivery [602]'),
+            ('uso_futuro', '🔮 Uso Futuro [603,604,902,905]'),
+            ('vendibili_tutti', '💰 Vendibili Tutti [102,202,302]'),
+            ('tutti_stati', '🌍 Tutti gli Stati')
+        ]
+        
+        for filter_key, text in all_filters:
+            var_name = f'filter_{filter_key}'
+            if not hasattr(self, var_name):
+                setattr(self, var_name, tk.BooleanVar())
+            
+            # Frame per checkbox + tooltip
+            filter_frame = ttk_modern.Frame(scrollable_frame)
+            filter_frame.pack(fill=X, pady=2, padx=5)
+            
+            cb = ttk_modern.Checkbutton(
+                filter_frame,
+                text=text,
+                variable=getattr(self, var_name),
+                bootstyle="info",  # Stile semplificato
+                command=lambda k=filter_key: self.on_filter_change(k)
+            )
+            cb.pack(side=LEFT)
+            
+            # Tooltip info
+            if filter_key in FILTRI_TIPOLOGIE_SEDE:
+                tooltip_text = FILTRI_TIPOLOGIE_SEDE[filter_key].get('tooltip', '')
+                if tooltip_text:
+                    info_btn = ttk_modern.Button(
+                        filter_frame,
+                        text="?",
+                        bootstyle="outline-secondary",
+                        width=2,
+                        command=lambda t=tooltip_text: messagebox.showinfo("Info", t)
+                    )
+                    info_btn.pack(side=RIGHT, padx=(5, 0))
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+    
+    def create_custom_filters_tab(self, parent):
+        """Tab per filtri personalizzati"""
+        ttk_modern.Label(parent, text="Filtro STATO_UI personalizzato:", font=("Arial", 10, "bold")).pack(anchor=W, pady=(10, 5))
+        
+        custom_frame = ttk_modern.Frame(parent)
+        custom_frame.pack(fill=X, pady=(5, 0), padx=5)
         
         ttk_modern.Entry(
             custom_frame,
@@ -401,29 +528,81 @@ class ModernOpenFiberGUI:
         
         ttk_modern.Button(
             custom_frame,
-            text="ℹ️",
+            text="ℹ️ Codici",
             command=self.show_state_codes,
             bootstyle="outline-secondary",
-            width=3
+            width=8
         ).pack(side=RIGHT)
         
-        hint_label = ttk_modern.Label(
-            filters_frame,
-            text="💡 Esempi: 302 (solo PA) | 102,302 (Resid.+PA) | 200,201 (Attivi)",
-            font=("Arial", 8),
-            bootstyle="secondary"
-        )
-        hint_label.pack(anchor=W, pady=(5, 0))
+        # Esempi
+        examples_frame = ttk_modern.LabelFrame(parent, text="💡 Esempi", padding=5)
+        examples_frame.pack(fill=X, pady=(10, 5), padx=5)
         
-        # Nota sui filtri
-        warning_label = ttk_modern.Label(
-            filters_frame,
-            text="⚠️ Nota: I filtri GUI sono attualmente solo informativi (v2.2 per funzionalità complete)",
-            font=("Arial", 8),
-            bootstyle="warning",
-            wraplength=300
-        )
-        warning_label.pack(anchor=W, pady=(5, 0))
+        examples = [
+            "302 - Solo PAC/PAL",
+            "102,302 - Residenziali + PAC/PAL",
+            "101,102 - Tutti FTTH",
+            "201,202,205 - Tutti FWA",
+            "80 - Prevendibilità",
+            "602 - Easy Delivery"
+        ]
+        
+        for example in examples:
+            ttk_modern.Label(
+                examples_frame,
+                text=f"• {example}",
+                font=("Arial", 8),
+                bootstyle="secondary"
+            ).pack(anchor=W, pady=1)
+    
+    def get_active_filter_codes(self):
+        """Raccoglie tutti i codici STATO_UI dai filtri attivi della GUI"""
+        active_codes = []
+        
+        # Verifica tutti i filtri estesi se esistono
+        for filter_key in FILTRI_TIPOLOGIE_SEDE.keys():
+            var_name = f'filter_{filter_key}'
+            if hasattr(self, var_name):
+                var = getattr(self, var_name)
+                if var.get():  # Filtro selezionato
+                    filter_info = FILTRI_TIPOLOGIE_SEDE[filter_key]
+                    codici = filter_info.get('codici', [])
+                    active_codes.extend(codici)
+        
+        return active_codes
+    
+    def on_filter_change(self, filter_key):
+        """Gestisce i cambiamenti nei filtri"""
+        if hasattr(self, f'filter_{filter_key}'):
+            is_selected = getattr(self, f'filter_{filter_key}').get()
+            filter_info = FILTRI_TIPOLOGIE_SEDE.get(filter_key, {})
+            codici = filter_info.get('codici', [])
+            
+            if is_selected and codici:
+                # Aggiorna il campo personalizzato con i codici del filtro selezionato
+                current_custom = self.filter_custom_state.get().strip()
+                new_codes = ','.join(codici)
+                
+                if not current_custom:
+                    self.filter_custom_state.set(new_codes)
+                else:
+                    # Merge intelligente dei codici
+                    current_codes = [c.strip() for c in current_custom.split(',') if c.strip()]
+                    all_codes = list(set(current_codes + codici))
+                    self.filter_custom_state.set(','.join(sorted(all_codes)))
+                
+                # Log il cambiamento
+                self.log_message(f"✅ Filtro attivato: {filter_info.get('descrizione', filter_key)} - Codici: {new_codes}")
+            elif not is_selected and codici:
+                # Rimuovi i codici del filtro disattivato dal campo personalizzato
+                current_custom = self.filter_custom_state.get().strip()
+                if current_custom:
+                    current_codes = [c.strip() for c in current_custom.split(',') if c.strip()]
+                    remaining_codes = [c for c in current_codes if c not in codici]
+                    self.filter_custom_state.set(','.join(remaining_codes))
+                
+                # Log la disattivazione
+                self.log_message(f"❌ Filtro disattivato: {filter_info.get('descrizione', filter_key)}")
     
     def create_export_options_section(self, parent):
         """Sezione opzioni export avanzate"""
@@ -435,7 +614,7 @@ class ModernOpenFiberGUI:
             export_frame,
             text="🌍 Genera KMZ per Google Earth (solo sedi PAC/PAL)",
             variable=self.export_kmz,
-            bootstyle="warning-round-toggle"
+            bootstyle="warning"  # Stile semplificato
         )
         kmz_checkbox.pack(anchor=W, pady=5)
         
@@ -635,7 +814,7 @@ class ModernOpenFiberGUI:
     
     def setup_layout(self):
         """Configurazioni finali layout"""
-        self.input_file_var.set("data/dbcopertura_CD_20250715.csv")
+        # Campo CSV input vuoto per default
         
         # Forza refresh per layout corretto
         self.app.update()
@@ -661,7 +840,13 @@ class ModernOpenFiberGUI:
     
     def on_closing(self):
         """Gestione chiusura applicazione"""
+        # Ripristina stdout/stderr originali
         sys.stdout = self.original_stdout
+        if hasattr(self, 'original_stderr'):
+            sys.stderr = self.original_stderr
+        
+        # Log finale
+        print("👋 Chiusura GUI...")
         self.app.destroy()
     
     # === EVENT HANDLERS ===
@@ -820,12 +1005,15 @@ class ModernOpenFiberGUI:
     
     def clear_log(self):
         """Pulisce il log"""
-        self.log_text.delete(1.0, tk.END)
-        self.log_message("🗑️ Log pulito", "info")
+        if hasattr(self, 'log_text'):
+            self.log_text.delete(1.0, tk.END)
+            self.log_message("🗑️ Log pulito", "info")
+        else:
+            print("⚠️ Widget log_text non trovato")
     
     def reset_form(self):
         """Reset form ai valori di default"""
-        self.input_file_var.set("data/dbcopertura_CD_20250715.csv")
+        # Campo CSV input vuoto per default
         self.output_dir_var.set("output")
         self.chunk_size_var.set(10000)
         self.filter_pac_pal.set(False)
@@ -881,18 +1069,36 @@ class ModernOpenFiberGUI:
             self.log_message(f"📂 Output dir: {self.output_dir_var.get()}", "info")
             self.log_message(f"⚙️ Chunk size: {chunk_size:,} righe", "info")
             
-            # Filtri attivi (per future implementazioni)
-            active_filters = []
-            if self.filter_pac_pal.get():
-                active_filters.append("🏛️ PAC/PAL [302]")
-            if self.filter_residenziali.get():
-                active_filters.append("🏠 Residenziali [102]")
-            if self.filter_custom_state.get().strip():
-                active_filters.append(f"🔍 Custom: {self.filter_custom_state.get()}")
+            # Calcola filtri STATO_UI attivi - ORA FUNZIONALI!
+            filter_codes = self.get_active_filter_codes()
+            active_filter_names = []
             
-            if active_filters:
-                self.log_message(f"🔍 Filtri attivi: {', '.join(active_filters)}", "warning")
-                self.log_message("⚠️ Nota: Filtri GUI non ancora implementati nel core engine", "warning")
+            # Filtri da checkbox legacy
+            if self.filter_pac_pal.get():
+                active_filter_names.append("🏛️ PAC/PAL [302]")
+                if '302' not in filter_codes:
+                    filter_codes.append('302')
+            if self.filter_residenziali.get():
+                active_filter_names.append("🏠 Residenziali [102]")
+                if '102' not in filter_codes:
+                    filter_codes.append('102')
+            
+            # Filtro personalizzato
+            if self.filter_custom_state.get().strip():
+                custom_codes = [c.strip() for c in self.filter_custom_state.get().split(',') if c.strip()]
+                active_filter_names.append(f"🔍 Custom: {self.filter_custom_state.get()}")
+                for code in custom_codes:
+                    if code not in filter_codes:
+                        filter_codes.append(code)
+            
+            # Rimuovi duplicati e ordina
+            filter_codes = sorted(list(set(filter_codes))) if filter_codes else None
+            
+            if filter_codes:
+                self.log_message(f"🔍 Filtri STATO_UI attivi: {filter_codes}", "success")
+                if active_filter_names:
+                    self.log_message(f"🏷️ Filtri GUI: {', '.join(active_filter_names)}", "info")
+                self.log_message("✅ Filtri verranno applicati durante l'estrazione", "success")
             else:
                 self.log_message("📋 Nessun filtro attivo - tutti i record saranno estratti", "info")
             
@@ -932,18 +1138,18 @@ class ModernOpenFiberGUI:
                 self.log_message(log_msg, "info")
                 time.sleep(0.5)
             
-            # 🔧 FIX: Disabilita temporaneamente stdout redirect per evitare duplicazione
-            original_stdout = sys.stdout
-            sys.stdout = self.original_stdout
-            
-            # Chiamata all'estrattore reale
+            # Chiamata all'estrattore reale con stdout redirect ATTIVO
             self.log_message("🔧 Avvio elaborazione core engine...", "warning")
             
-            # AGGIORNATO: Passa il parametro export_kmz
-            success = estrai_regione_02(input_file, output_file, chunk_size, export_kmz=self.export_kmz.get())
-            
-            # 🔧 FIX: Ripristina stdout redirect
-            sys.stdout = StdoutRedirector(self.log_queue)
+            # AGGIORNATO: Passa i parametri export_kmz e filtri
+            # Il redirect è ATTIVO - tutti i print() andranno nella GUI E nel terminale
+            success = estrai_regione_02(
+                input_file, 
+                output_file, 
+                chunk_size, 
+                export_kmz=self.export_kmz.get(),
+                filter_state_codes=filter_codes
+            )
             
             if success:
                 # Calcola statistiche finali
@@ -979,27 +1185,31 @@ class ModernOpenFiberGUI:
                 
                 self.update_progress(100, "Elaborazione completata!")
                 
-                # Notifica di completamento
+                # Prepara notifica di completamento (mostrata nel main thread)
                 success_msg = f"Elaborazione completata!\n\nFile Excel: {os.path.basename(excel_file_to_show)}\nTempo: {elapsed_time:.1f} secondi"
                 
                 if self.export_kmz.get() and os.path.exists(f"{os.path.splitext(excel_file_to_show)[0]}_PAC_PAL.kmz"):
                     success_msg += f"\nFile KMZ: {os.path.basename(os.path.splitext(excel_file_to_show)[0])}_PAC_PAL.kmz"
                 
-                messagebox.showinfo("Successo", success_msg)
+                # Mostra messagebox nel main thread per non bloccare
+                self.app.after(0, lambda: messagebox.showinfo("Successo", success_msg))
                 
             else:
                 self.log_message("❌ Elaborazione fallita", "error")
                 self.update_progress(0, "Elaborazione fallita")
-                messagebox.showerror("Errore", "L'elaborazione è fallita. Controlla il log per dettagli.")
+                # Mostra errore nel main thread
+                self.app.after(0, lambda: messagebox.showerror("Errore", "L'elaborazione è fallita. Controlla il log per dettagli."))
             
         except Exception as e:
             self.log_message(f"❌ Errore critico durante elaborazione: {str(e)}", "error")
             self.update_progress(0, "Errore critico")
-            messagebox.showerror("Errore Critico", f"Errore durante elaborazione:\n{str(e)}")
+            # Mostra errore critico nel main thread
+            self.app.after(0, lambda: messagebox.showerror("Errore Critico", f"Errore durante elaborazione:\n{str(e)}"))
         finally:
             self.processing = False
-            # Assicura che stdout sia ripristinato
-            sys.stdout = StdoutRedirector(self.log_queue)
+            # Assicura che stdout sia ripristinato correttamente
+            if hasattr(self, 'original_stdout'):
+                sys.stdout = StdoutRedirector(self.log_queue, self.original_stdout)
             self.app.after(0, self.reset_processing_state)
     
     def update_progress(self, value, status):
@@ -1041,24 +1251,43 @@ class ModernOpenFiberGUI:
         self.start_button.configure(text="🚀 Avvia Elaborazione", state=NORMAL)
     
     def log_message(self, message, level="info"):
-        """Aggiunge messaggio al log"""
+        """Aggiunge un messaggio al log - metodo diretto per la GUI"""
         timestamp = datetime.now().strftime("%H:%M:%S")
         self.log_queue.put((timestamp, message, level))
     
     def update_log_display(self):
-        """Aggiorna display log da queue"""
+        """Aggiorna display log da queue - MIGLIORATO per catturare tutti i log"""
         try:
+            # Verifica che il widget log esista
+            if not hasattr(self, 'log_text'):
+                return
+            
+            # Processa tutti i messaggi in coda
+            messages_processed = 0
             while True:
                 timestamp, message, level = self.log_queue.get_nowait()
                 
+                # Inserisce nel widget di testo
                 self.log_text.insert(tk.END, f"[{timestamp}] ", "timestamp")
                 self.log_text.insert(tk.END, f"{message}\n", level)
                 
+                # Auto-scroll
                 self.log_text.see(tk.END)
+                messages_processed += 1
+                
+                # Limita il numero di righe nel log per performance
+                try:
+                    line_count = int(self.log_text.index('end-1c').split('.')[0])
+                    if line_count > 1000:
+                        # Rimuovi le prime 200 righe se superano 1000
+                        self.log_text.delete('1.0', '200.0')
+                except:
+                    pass  # Ignora errori di parsing index
                 
         except queue.Empty:
             pass
         
+        # Continua l'aggiornamento
         self.app.after(100, self.update_log_display)
     
     def run(self):

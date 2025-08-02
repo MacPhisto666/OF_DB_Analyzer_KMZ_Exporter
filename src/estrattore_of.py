@@ -34,15 +34,34 @@ COLONNE_OUTPUT = [
     'DATA_ULTIMA_VARIAZIONE_STATO_BUILDING'
 ]
 
-def process_record(row):
+# Nomi alternativi per il campo stato (per retrocompatibilità)
+STATO_FIELD_NAMES = ['STATO_UI', 'STATO_BUILDING']
+
+def get_stato_field_name(columns):
+    """Determina quale campo stato è disponibile nel CSV"""
+    for field_name in STATO_FIELD_NAMES:
+        if field_name in columns:
+            return field_name
+    return 'STATO_UI'  # Default fallback
+
+def process_record(row, stato_field_name='STATO_UI'):
     """
     Arricchisce un record CSV con dati da mappature esterne
-    Versione aggiornata per supporto KMZ
+    Versione aggiornata per supporto KMZ e campo STATO_BUILDING
+    
+    Args:
+        row: Riga CSV da processare
+        stato_field_name: Nome del campo stato (STATO_UI o STATO_BUILDING)
     """
     # Record base con colonne selezionate
     record_filtrato = {}
     for col in COLONNE_OUTPUT:
-        if col != 'COMUNE':  # Gestito separatamente
+        if col == 'COMUNE':  # Gestito separatamente
+            continue
+        elif col == 'STATO_UI':
+            # Usa il campo stato corretto (STATO_UI o STATO_BUILDING)
+            record_filtrato[col] = row[stato_field_name] if stato_field_name in row else ''
+        else:
             record_filtrato[col] = row[col] if col in row else ''
     
     # Enrichment 1: Mapping Comune (ISTAT → Nome italiano)
@@ -166,16 +185,19 @@ def generate_multisheet_excel(df_valle_aosta, file_output):
 def estrai_regione_02(file_input="data/dbcopertura_CD_20250715.csv", 
                      file_output="output/valle_aosta_estratto.xlsx", 
                      chunk_size=10000,
-                     export_kmz=False):
+                     export_kmz=False,
+                     filter_state_codes=None):
     """
-    Estrae dati regione 02 (Valle d'Aosta) con supporto export KMZ opzionale
-    VERSIONE AGGIORNATA v2.1.1 con nome file automatico
+    Estrae dati regione 02 (Valle d'Aosta) con supporto export KMZ opzionale e filtri STATO_UI
+    VERSIONE AGGIORNATA v2.1.1 con nome file automatico e filtri funzionali
     
     Args:
         file_input: Path file CSV di input
         file_output: Path file Excel di output (verrà aggiunta data automaticamente)
         chunk_size: Dimensione chunk per ottimizzazione memoria
         export_kmz: Se True, genera anche file KMZ per Google Earth
+        filter_state_codes: Lista di codici STATO_UI da filtrare (es. ['102', '302'])
+                           Se None, estrae tutti i record
     
     Returns:
         bool: True se successo, False se errore
@@ -209,6 +231,16 @@ def estrai_regione_02(file_input="data/dbcopertura_CD_20250715.csv",
     print(f"📂 File output: {file_output_final}")
     print(f"⚙️ Chunk size: {chunk_size:,} righe")
     
+    # Informazioni sui filtri
+    if filter_state_codes:
+        print(f"🔍 Filtro STATO_UI attivo: {filter_state_codes}")
+        from config import STATI_UI
+        for code in filter_state_codes:
+            desc = STATI_UI.get(code, 'Sconosciuto')
+            print(f"  • {code}: {desc}")
+    else:
+        print("📋 Nessun filtro - tutti i record saranno estratti")
+    
     if export_kmz:
         if KMZ_SUPPORT:
             print("🌍 Export KMZ: Abilitato")
@@ -227,6 +259,28 @@ def estrai_regione_02(file_input="data/dbcopertura_CD_20250715.csv",
             dtype=str,
             low_memory=False
         )
+        
+        # Leggi il primo chunk per determinare il nome del campo stato
+        first_chunk = next(iter(pd.read_csv(
+            file_input,
+            sep='|',
+            chunksize=1,
+            dtype=str,
+            low_memory=False
+        )))
+        
+        stato_field_name = get_stato_field_name(first_chunk.columns)
+        print(f"📋 Campo stato rilevato: {stato_field_name}")
+        
+        # Ricrea l'iteratore (il primo è stato consumato)
+        chunk_iterator = pd.read_csv(
+            file_input,
+            sep='|',
+            chunksize=chunk_size,
+            dtype=str,
+            low_memory=False
+        )
+        
     except Exception as e:
         print(f"❌ Errore lettura CSV: {e}")
         return False
@@ -258,9 +312,19 @@ def estrai_regione_02(file_input="data/dbcopertura_CD_20250715.csv",
             
             if found_start:
                 if regione == '02':
-                    # Processa e arricchisce record
-                    record_arricchito = process_record(row)
-                    valle_aosta_data.append(record_arricchito)
+                    # Processa e arricchisce record con campo stato corretto
+                    record_arricchito = process_record(row, stato_field_name)
+                    
+                    # Applica filtro STATO_UI se specificato
+                    if filter_state_codes is None:
+                        # Nessun filtro - aggiungi tutti i record
+                        valle_aosta_data.append(record_arricchito)
+                    else:
+                        # Controlla se il record soddisfa il filtro
+                        stato_ui = str(record_arricchito.get('STATO_UI', '')).strip()
+                        if stato_ui in filter_state_codes:
+                            valle_aosta_data.append(record_arricchito)
+                        # Record filtrato - non viene aggiunto
                     
                     # Progress estrazione
                     if len(valle_aosta_data) % 1000 == 0:
