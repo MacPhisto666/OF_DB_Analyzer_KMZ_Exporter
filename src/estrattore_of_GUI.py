@@ -195,7 +195,7 @@ class ModernOpenFiberGUI:
             main_container, 
             text="⚙️ Configurazione", 
             padding=15,
-            bootstyle="info"
+            bootstyle="info" # type: ignore
         )
         left_panel.pack(side=LEFT, fill=Y, padx=(0, 15))
         
@@ -218,11 +218,11 @@ class ModernOpenFiberGUI:
     
     def create_header(self):
         """Crea l'header principale con loghi personalizzati"""
-        header_frame = ttk_modern.Frame(self.app, bootstyle="dark", padding=15)
+        header_frame = ttk_modern.Frame(self.app, bootstyle="dark", padding=15) # type: ignore
         header_frame.pack(fill=X, padx=20, pady=(20, 0))
         
         # Container per logo azienda + titolo
-        left_container = ttk_modern.Frame(header_frame, bootstyle="dark")
+        left_container = ttk_modern.Frame(header_frame, bootstyle="dark") # type: ignore
         left_container.pack(side=LEFT, fill=Y)
         
         # Logo azienda
@@ -230,7 +230,7 @@ class ModernOpenFiberGUI:
             logo_label = ttk_modern.Label(
                 left_container,
                 image=self.logo_azienda,
-                bootstyle="dark"
+                bootstyle="dark" # type: ignore
             )
             logo_label.pack(side=LEFT, padx=(0, 20))
         else:
@@ -238,14 +238,14 @@ class ModernOpenFiberGUI:
                 left_container,
                 text="🚀",
                 font=("Arial", 40),
-                bootstyle="light"
+                bootstyle="light" # type: ignore
             ).pack(side=LEFT, padx=(0, 20))
         
         # Titolo su una sola riga orizzontale
-        title_container = ttk_modern.Frame(left_container, bootstyle="dark")
+        title_container = ttk_modern.Frame(left_container, bootstyle="dark") # type: ignore
         title_container.pack(side=LEFT, fill=Y, anchor="center")
         
-        title_row = ttk_modern.Frame(title_container, bootstyle="dark")
+        title_row = ttk_modern.Frame(title_container, bootstyle="dark") # type: ignore
         title_row.pack(anchor="w")
         
         # Prima parte del titolo
@@ -253,7 +253,7 @@ class ModernOpenFiberGUI:
             title_row,
             text="Analizzatore DB ",
             font=("Arial", 26, "bold"),
-            bootstyle="light"
+            bootstyle="light" # type: ignore
         )
         title_label.pack(side=LEFT, anchor="center")
         
@@ -270,19 +270,19 @@ class ModernOpenFiberGUI:
                 title_row,
                 text="OpenFiber",
                 font=("Arial", 26, "bold"),
-                bootstyle="danger",
+                bootstyle="danger", # type: ignore
                 foreground="#e91e63"
             ).pack(side=LEFT, anchor="center", padx=(5, 0))
         
         # Versione e info (destra)
-        version_container = ttk_modern.Frame(header_frame, bootstyle="dark")
+        version_container = ttk_modern.Frame(header_frame, bootstyle="dark") # type: ignore
         version_container.pack(side=RIGHT, fill=Y)
         
         version_label = ttk_modern.Label(
             version_container,
             text="v2.1.1 Auto-Date",
             font=("Arial", 12, "bold"),
-            bootstyle="light"
+            bootstyle="light" # type: ignore
         )
         version_label.pack(anchor=E)
         
@@ -290,16 +290,16 @@ class ModernOpenFiberGUI:
             version_container,
             text="Valle d'Aosta + KMZ",
             font=("Arial", 10),
-            bootstyle="success"
+            bootstyle="success" # type: ignore
         )
         region_label.pack(anchor=E, pady=(2, 0))
     
     def create_footer(self):
         """Crea footer con firma personalizzata"""
-        footer_frame = ttk_modern.Frame(self.app, bootstyle="dark", padding=10)
+        footer_frame = ttk_modern.Frame(self.app, bootstyle="dark", padding=10) # type: ignore
         footer_frame.pack(fill=X, side=BOTTOM, padx=20, pady=(0, 20))
         
-        ttk_modern.Separator(footer_frame, orient=HORIZONTAL, bootstyle="light").pack(fill=X, pady=(0, 10))
+        ttk_modern.Separator(footer_frame, orient=HORIZONTAL, bootstyle="light").pack(fill=X, pady=(0, 10)) # type: ignore
         
         signature_label = ttk_modern.Label(
             footer_frame,
