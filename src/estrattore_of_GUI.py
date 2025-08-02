@@ -135,8 +135,14 @@ class ModernOpenFiberGUI:
     def get_base_path(self):
         """Ottiene la directory base sia in sviluppo che nell'eseguibile PyInstaller"""
         if getattr(sys, 'frozen', False):
-            # Eseguibile PyInstaller: usa la directory dell'eseguibile
-            return os.path.dirname(sys.executable)
+            # Eseguibile PyInstaller: usa prima la directory temporanera interna,
+            # poi la directory dell'eseguibile come fallback
+            if hasattr(sys, '_MEIPASS'):
+                # File inclusi nell'eseguibile PyInstaller
+                return sys._MEIPASS
+            else:
+                # Fallback: directory dell'eseguibile
+                return os.path.dirname(sys.executable)
         else:
             # Ambiente di sviluppo: usa la directory del progetto
             current_dir = os.path.dirname(os.path.abspath(__file__))
