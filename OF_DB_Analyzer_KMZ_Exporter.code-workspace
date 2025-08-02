@@ -9,14 +9,11 @@
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
     "python.envFile": "${workspaceFolder}/.env",
     "python.terminal.activateEnvironment": true,
-
     // Profilo terminale preferito per evitare problemi con PowerShell
     "terminal.integrated.defaultProfile.windows": "cmd",
-
     // Suggerimenti e type checking leggeri
     "python.analysis.autoImportCompletions": true,
     "python.analysis.typeCheckingMode": "basic",
-
     // Formattazione automatica
     "python.formatting.provider": "black",
     "editor.formatOnSave": true
