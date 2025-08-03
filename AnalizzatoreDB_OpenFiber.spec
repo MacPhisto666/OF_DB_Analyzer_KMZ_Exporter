@@ -10,45 +10,23 @@ added_files = [
 
 # Moduli nascosti (dipendenze che PyInstaller potrebbe non rilevare)
 hidden_imports = [
-    'estrattore_of',  # Modulo locale principale
-    'config',         # Modulo locale configurazione
     'PIL',
     'PIL.Image',
     'PIL.ImageTk',
     'ttkbootstrap',
     'ttkbootstrap.constants',
     'pandas',
-    'pandas._libs',
-    'pandas._libs.tslib',
-    'pandas._libs.tslibs',
-    'pandas._libs.tslibs.base',
-    'numpy',
-    'numpy.random',
-    'numpy.random.bit_generator',
-    'numpy.random._pickle',
     'openpyxl',
-    'openpyxl.styles',
-    'openpyxl.workbook',
-    'openpyxl.worksheet',
     'queue',
     'threading',
     'datetime',
     'xml.etree.ElementTree',
     'zipfile',
-    'secrets',  # Modulo mancante per numpy.random
-    'hashlib',
-    'hmac',
-    'base64',
-    'io',
-    'tkinter',
-    'tkinter.ttk',
-    'tkinter.filedialog',
-    'tkinter.messagebox',
 ]
 
 a = Analysis(
     ['src/estrattore_of_GUI.py'],
-    pathex=['src'],
+    pathex=[],
     binaries=[],
     datas=added_files,
     hiddenimports=hidden_imports,
@@ -58,10 +36,9 @@ a = Analysis(
     excludes=[
         'matplotlib',  # Esclude matplotlib se non usato
         'scipy',       # Esclude scipy se non usato
+        'numpy.testing',
         'pytest',
         'unittest',
-        'test',
-        'tests',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
