@@ -10,15 +10,28 @@ This is the **OpenFiber DB Analyzer v2.1.1** - a specialized data extraction and
 
 ### Module Structure
 - **`estrattore_of.py`**: Core extraction engine with chunked CSV processing, data enrichment, and Excel export
+  - Function `estrai_regione_02()`: Main processing function with optional KMZ export
+  - Function `process_record()`: Individual record enrichment with PCN/municipality mapping
+  - Function `sanitize_sheet_name()`: Excel-safe worksheet naming
 - **`estrattore_of_GUI.py`**: Modern GUI application with fullscreen interface, progress tracking, and logo support
+  - Class `ModernOpenFiberGUI`: Main GUI application with ttkbootstrap theming
+  - Class `StdoutRedirector`: Thread-safe stdout redirection for live logging
+  - Threading implementation for non-blocking UI during processing
 - **`kmz_exporter.py`**: Google Earth KMZ export module for geographic visualization
+  - Class `KMZExporter`: Complete KMZ generation with color-coded PCN mapping
+  - Function `genera_kmz_pac_pal()`: High-level export function
+  - Coordinate parsing for OpenFiber format (N45.123_E7.456)
 - **`config.py`**: Centralized configuration with municipality mappings, PCN data, and UI state codes
+  - `COMUNI_VALLE_AOSTA`: 74 municipality mappings (ISTAT → Italian names)
+  - `PCN_VALLE_AOSTA`: 42 PCN locations with GPS coordinates
+  - `STATI_UI`: Complete reference of UI state codes
 
 ### Data Processing Pipeline
-1. **CSV Reading**: Chunked processing (default 10,000 rows) to handle large files
-2. **Region Filtering**: Automatic extraction of region 02 (Valle d'Aosta)
+1. **CSV Reading**: Chunked processing (default 10,000 rows) to handle large files efficiently
+2. **Region Filtering**: Automatic extraction of region 02 (Valle d'Aosta) from national dataset
 3. **Data Enrichment**: Municipality name mapping (ISTAT codes → Italian names) and PCN coordinate integration
-4. **Output Generation**: Multi-sheet Excel files and optional KMZ for Google Earth
+4. **Output Generation**: Multi-sheet Excel files (one per municipality) and optional KMZ for Google Earth
+5. **File Naming**: Automatic timestamp-based naming (YYYYMMDD format)
 
 ## Development Commands
 
@@ -29,24 +42,45 @@ pip install -r requirements.txt
 
 ### Running the Application
 ```bash
-# GUI version (recommended)
+# GUI version (recommended) - launches fullscreen
 cd src
 python estrattore_of_GUI.py
 
-# Console version
+# Console version with direct CSV processing
 cd src
 python estrattore_of.py
 ```
 
+### Building Executable
+```bash
+# Install PyInstaller (if not already installed)
+pip install pyinstaller
+
+# Build using automated script
+python build_executable.py
+
+# Alternative: Use batch script (Windows)
+crea_eseguibile.bat
+```
+
 ### Testing
 ```bash
-# Test KMZ export functionality
+# Test KMZ export functionality (requires existing Excel file)
 cd src
 python test_excel_to_kmz.py
 
-# Test integration
+# Test integration with mock data
 cd src
 python test_kmz_integration.py
+```
+
+### Development Testing
+```bash
+# Quick functionality test (from project root)
+cd src && python estrattore_of.py
+
+# GUI development test
+cd src && python estrattore_of_GUI.py
 ```
 
 ## Key Configuration
@@ -86,19 +120,44 @@ python test_kmz_integration.py
 - Processes ~30,000 rows/second
 - 770K row dataset completes in ~45 seconds
 - Memory-efficient chunked processing for large files
+- Configurable chunk sizes in `config.py:CHUNK_SIZE_PROFILES`
 
-### GUI Features
-- Fullscreen launch with modern dark theme
-- Live progress tracking with queue-based logging
-- Optional KMZ export checkbox
-- Integrated logo display system
+### GUI Implementation Details
+- **Framework**: ttkbootstrap with "superhero" dark theme
+- **Threading**: Queue-based communication between worker and UI threads
+- **Logging**: Custom `StdoutRedirector` for real-time progress updates
+- **Fullscreen**: Automatic `zoomed` state on launch
+- **Logo Support**: PIL/Pillow for dynamic logo loading and resizing
 
-### File Structure
-- Input files: `data/` (excluded from Git)
-- Output files: `output/` (excluded from Git)
-- All source code: `src/`
-- Documentation: `docs/`
+### KMZ Export Architecture
+- **Color System**: 20 rotating colors for PCN differentiation
+- **Coordinate Parsing**: Custom regex for OpenFiber format (N45.123_E7.456)
+- **File Structure**: Hierarchical folders (PCN folder + municipality folders)
+- **Icon System**: Google Maps icons for buildings and phones
+
+### File Structure and Git Strategy
+- **Input files**: `data/` (ignored by Git due to size)
+- **Output files**: `output/` (ignored by Git - local results)
+- **Build artifacts**: `build/`, `dist/`, `*_Portable/` (ignored by Git)
+- **Source code**: `src/` (tracked in Git)
+- **Documentation**: `docs/` (tracked in Git)
+- **Executable creation**: PyInstaller with custom `.spec` file
+
+### Code Conventions
+- **Error Handling**: Graceful degradation for missing dependencies (KMZ, PIL)
+- **Import Strategy**: Optional imports with feature detection
+- **Configuration**: Centralized in `config.py` with logical grouping
+- **Logging**: Timestamp-prefixed messages with queue-based GUI integration
 
 ## Testing Strategy
 
-The project includes integration tests for KMZ export functionality. Run tests from the `src/` directory to ensure proper module path resolution.
+### Test Files Structure
+- `test_excel_to_kmz.py`: Tests KMZ export using existing Excel files
+- `test_kmz_integration.py`: Tests KMZ with synthetic data
+- Run tests from `src/` directory for proper module path resolution
+
+### Manual Testing
+- Large file processing: Use 1.5GB+ CSV files to test memory efficiency
+- GUI responsiveness: Verify progress updates during long operations
+- KMZ validation: Open generated files in Google Earth
+- Executable testing: Use portable package on clean Windows systems

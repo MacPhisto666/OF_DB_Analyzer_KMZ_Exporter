@@ -10,6 +10,11 @@ added_files = [
 
 # Moduli nascosti (dipendenze che PyInstaller potrebbe non rilevare)
 hidden_imports = [
+    # Moduli locali del progetto
+    'estrattore_of',
+    'config',
+    'kmz_exporter',
+    # Dipendenze esterne
     'PIL',
     'PIL.Image',
     'PIL.ImageTk',
@@ -22,11 +27,14 @@ hidden_imports = [
     'datetime',
     'xml.etree.ElementTree',
     'zipfile',
+    'secrets',  # Necessario per numpy/pandas
+    'numpy.random',
+    'numpy.random.bit_generator',
 ]
 
 a = Analysis(
     ['src/estrattore_of_GUI.py'],
-    pathex=[],
+    pathex=['src'],  # Aggiungi src al path per trovare i moduli locali
     binaries=[],
     datas=added_files,
     hiddenimports=hidden_imports,
