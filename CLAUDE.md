@@ -161,3 +161,78 @@ cd src && python estrattore_of_GUI.py
 - GUI responsiveness: Verify progress updates during long operations
 - KMZ validation: Open generated files in Google Earth
 - Executable testing: Use portable package on clean Windows systems
+
+## Development Workflow
+
+### Setting Up Development Environment
+1. Always run commands from the project root directory
+2. Install dependencies: `pip install -r requirements.txt`
+3. Place test CSV files in `data/` directory (ignored by Git)
+4. Generated outputs will appear in `output/` (ignored by Git)
+
+### Build Process
+The project uses PyInstaller for creating standalone executables:
+
+**Primary build command:**
+```bash
+python build_executable.py
+```
+
+**Alternative Windows batch:**
+```bash
+crea_eseguibile.bat
+```
+
+**Manual PyInstaller (if needed):**
+```bash
+python -m PyInstaller --clean --noconfirm AnalizzatoreDB_OpenFiber.spec
+```
+
+### Key Architecture Patterns
+
+**Threading Architecture:**
+- GUI uses queue-based threading to prevent UI blocking during processing
+- Worker thread handles CSV processing while UI thread manages interface updates
+- `StdoutRedirector` class captures console output for live display in GUI
+
+**Data Processing Pipeline:**
+1. **Chunked CSV Reading**: Uses pandas with configurable chunk sizes (default 10,000 rows)
+2. **Region Filtering**: Extracts only region code "02" (Valle d'Aosta) from national dataset
+3. **Data Enrichment**: Maps ISTAT codes to municipality names, joins PCN coordinate data
+4. **Multi-format Output**: Generates Excel (multi-sheet) and optional KMZ files
+5. **Automatic Naming**: Files include YYYYMMDD timestamp format
+
+**Error Handling Patterns:**
+- Graceful degradation for optional dependencies (PIL for logos, KMZ modules)
+- Optional imports with feature detection (`try/except ImportError`)
+- Console fallback available if GUI dependencies are unavailable
+
+### Critical Configuration Points
+
+**Main Processing Function (`estrattore_of.py:estrai_regione_02()`):**
+- `chunk_size`: Memory optimization parameter (adjust based on available RAM)
+- `export_kmz`: Boolean flag for KMZ generation (requires valid coordinates)
+- `filtro_stati_ui`: Filter for specific UI state codes (302=PAC/PAL, 102=Residential)
+
+**GUI State Management (`estrattore_of_GUI.py`):**
+- Uses ttkbootstrap "superhero" theme for dark professional appearance
+- Fullscreen mode enabled by default (`state='zoomed'`)
+- Logo integration via PIL/Pillow with proportional resizing
+
+**KMZ Export Architecture (`kmz_exporter.py`):**
+- Color rotation system (20 predefined colors) for PCN differentiation
+- Hierarchical folder structure (PCN folder + municipality subfolders)
+- Coordinate parsing for OpenFiber format (N45.123456_E7.123456)
+
+### Performance and Data Notes
+
+**CSV Format Requirements:**
+- Pipe-separated values (`|`) as delimiter
+- UTF-8 encoding required
+- Region field must contain "02" for Valle d'Aosta extraction
+- COORDINATE_BUILDING format: N45.123456_E7.123456 (decimal degrees)
+
+**Memory Management:**
+- Chunked processing prevents memory exhaustion on large files
+- Default chunk size: 10,000 rows (adjustable via GUI slider)
+- Processes approximately 30,000 rows/second on typical hardware
